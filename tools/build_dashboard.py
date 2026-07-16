@@ -354,13 +354,13 @@ autosize(ws_master, {"A": 12, "B": 11, "C": 6, "D": 6, "E": 13, "F": 11, "G": 26
 ws_master.freeze_panes = "A3"
 
 # ---- Data validation dropdowns ----
-dv_dept = DataValidation(type="list", formula1="=DeptList", allow_blank=False, showDropDown=False)
+dv_dept = DataValidation(type="list", formula1="DeptList", allow_blank=False, showDropDown=False)
 dv_dept.error = "Please choose a department from the list."
 dv_dept.errorTitle = "Invalid Department"
 ws_master.add_data_validation(dv_dept)
 dv_dept.add(f"E3:E{total_last_row}")
 
-dv_kpi = DataValidation(type="list", formula1='=INDIRECT("KPI_"&$E3)', allow_blank=True, showDropDown=False)
+dv_kpi = DataValidation(type="list", formula1='INDIRECT("KPI_"&$E3)', allow_blank=True, showDropDown=False)
 dv_kpi.error = "Choose a KPI Name valid for the selected Department."
 dv_kpi.errorTitle = "Invalid KPI"
 ws_master.add_data_validation(dv_kpi)
@@ -511,7 +511,7 @@ dv_astatus.add(f"J3:J{action_total_last}")
 dv_apriority = DataValidation(type="list", formula1='"Low,Medium,High"', allow_blank=True, showDropDown=False)
 ws_action.add_data_validation(dv_apriority)
 dv_apriority.add(f"K3:K{action_total_last}")
-dv_adept = DataValidation(type="list", formula1="=DeptList", allow_blank=True, showDropDown=False)
+dv_adept = DataValidation(type="list", formula1="DeptList", allow_blank=True, showDropDown=False)
 ws_action.add_data_validation(dv_adept)
 dv_adept.add(f"C3:C{action_total_last}")
 dv_adept.add(f"H3:H{action_total_last}")
@@ -606,7 +606,7 @@ chal_tab = Table(displayName="Tbl_Challenges", ref=f"A2:G{chal_total_last}")
 chal_tab.tableStyleInfo = TableStyleInfo(name="TableStyleMedium2", showRowStripes=True)
 ws_chal.add_table(chal_tab)
 
-dv_cdept = DataValidation(type="list", formula1="=DeptList", allow_blank=True, showDropDown=False)
+dv_cdept = DataValidation(type="list", formula1="DeptList", allow_blank=True, showDropDown=False)
 ws_chal.add_data_validation(dv_cdept)
 dv_cdept.add(f"A3:A{chal_total_last}")
 dv_cimpact = DataValidation(type="list", formula1='"Low,Medium,High"', allow_blank=True, showDropDown=False)
@@ -773,7 +773,7 @@ ws_month["B3"].font = Font(name=FONT_NAME, size=11, bold=True, color=ACCENT_BLUE
 ws_month["B3"].fill = PatternFill("solid", fgColor=LIGHT_GREY)
 ws_month["B3"].border = BORDER_ALL
 ws_month["B3"].alignment = CENTER
-dv_month = DataValidation(type="list", formula1=f"={MK}[Month]", allow_blank=False, showDropDown=False)
+dv_month = DataValidation(type="list", formula1=f"{MK}[Month]", allow_blank=False, showDropDown=False)
 ws_month.add_data_validation(dv_month)
 dv_month.add("B3")
 
