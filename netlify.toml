@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# The app uses HashRouter (routes like /#/data-entry), so no rewrite is
+# strictly required — this is kept as a safety net in case routing is
+# ever switched to BrowserRouter.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
