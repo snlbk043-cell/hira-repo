@@ -65,7 +65,7 @@ export function DepartmentPerformance() {
 
       <FilterBar />
 
-      <div className="flex flex-wrap items-end gap-4">
+      <div className="no-print flex flex-wrap items-end gap-4">
         <div className="flex flex-col gap-1">
           <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
             Focus Department

@@ -75,6 +75,15 @@ export interface MasterLists {
   priorities: Priority[];
 }
 
+/** Leadership sign-off record for a single review period, keyed "YYYY-Month". */
+export interface LeadershipReview {
+  reviewedBy: string;
+  designation: string;
+  reviewDate: string | null;
+  comments: string;
+  decision: string;
+}
+
 export interface AppState {
   kpiDefinitions: KpiDefinition[];
   kpiRecords: KpiRecord[];
@@ -82,7 +91,11 @@ export interface AppState {
   meta: {
     lastDataUpdate: string;
     companyName: string;
+    plantName: string;
+    preparedBy: string;
+    dueSoonDays: number;
   };
+  leadershipReviews: Record<string, LeadershipReview>;
 }
 
 export interface Filters {

@@ -8,6 +8,8 @@ import {
   Moon,
   Sun,
   Factory,
+  ClipboardCheck,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useAppStore } from '../state/AppStore';
 
@@ -15,7 +17,9 @@ const NAV_ITEMS = [
   { to: '/', label: 'Executive Dashboard', icon: LayoutDashboard },
   { to: '/data-entry', label: 'KPI Data Entry', icon: Table2 },
   { to: '/departments', label: 'Department Performance', icon: Building2 },
+  { to: '/leadership-review', label: 'Leadership Review', icon: ClipboardCheck },
   { to: '/master-data', label: 'Master Data', icon: Database },
+  { to: '/settings', label: 'Settings', icon: SlidersHorizontal },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -24,7 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--surface-0)' }}>
       <aside
-        className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r"
+        className="no-print sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r"
         style={{ background: 'var(--surface-1)', borderColor: 'var(--border)', borderTop: '3px solid var(--brand-accent)' }}
       >
         <div className="flex items-center gap-2 px-5 py-5">

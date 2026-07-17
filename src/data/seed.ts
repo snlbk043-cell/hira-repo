@@ -2297,6 +2297,10 @@ export const initialState: AppState = {
   meta: {
     lastDataUpdate: '2026-07-17T08:30:00',
     companyName: 'RCPL',
+    plantName: 'RCPL Kurnool — Campa Cola / Soft Beverage Plant',
+    preparedBy: 'Factory Manager',
+    dueSoonDays: 3,
   },
+  leadershipReviews: {},
 };
 

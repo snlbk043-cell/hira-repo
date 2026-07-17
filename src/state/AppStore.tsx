@@ -1,15 +1,25 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { AppState, Filters, KpiDefinition, KpiRecord } from '../types';
+import type { AppState, Filters, KpiDefinition, KpiRecord, LeadershipReview } from '../types';
 import { initialState } from '../data/seed';
 
 const STORAGE_KEY = 'rcpl-dms-state-v1';
 const FILTERS_KEY = 'rcpl-dms-filters-v1';
 const THEME_KEY = 'rcpl-dms-theme-v1';
+const DEFAULT_REVIEW: LeadershipReview = { reviewedBy: '', designation: '', reviewDate: null, comments: '', decision: '' };
 
 function loadState(): AppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as AppState;
+    if (raw) {
+      const parsed = JSON.parse(raw) as AppState;
+      // Merge in any fields added since this state was last saved.
+      return {
+        ...initialState,
+        ...parsed,
+        meta: { ...initialState.meta, ...parsed.meta },
+        leadershipReviews: { ...initialState.leadershipReviews, ...parsed.leadershipReviews },
+      };
+    }
   } catch {
     /* ignore corrupt storage */
   }
@@ -36,6 +46,8 @@ interface AppContextValue {
   removeKpi: (kpiId: string) => void;
   updateDefinition: (kpiId: string, patch: Partial<KpiDefinition>) => void;
   updateMasterLists: (patch: Partial<AppState['masterLists']>) => void;
+  updateMeta: (patch: Partial<AppState['meta']>) => void;
+  updateLeadershipReview: (key: string, patch: Partial<LeadershipReview>) => void;
   resetToSeed: () => void;
   importState: (s: AppState) => void;
   theme: 'light' | 'dark';
@@ -118,6 +130,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, masterLists: { ...prev.masterLists, ...patch } }));
   }, []);
 
+  const updateMeta = useCallback((patch: Partial<AppState['meta']>) => {
+    setState((prev) => ({ ...prev, meta: { ...prev.meta, ...patch } }));
+  }, []);
+
+  const updateLeadershipReview = useCallback((key: string, patch: Partial<LeadershipReview>) => {
+    setState((prev) => ({
+      ...prev,
+      leadershipReviews: {
+        ...prev.leadershipReviews,
+        [key]: { ...DEFAULT_REVIEW, ...prev.leadershipReviews[key], ...patch },
+      },
+    }));
+  }, []);
+
   const resetToSeed = useCallback(() => {
     setState(initialState);
   }, []);
@@ -141,12 +167,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
       removeKpi,
       updateDefinition,
       updateMasterLists,
+      updateMeta,
+      updateLeadershipReview,
       resetToSeed,
       importState,
       theme,
       toggleTheme,
     }),
-    [state, filters, setFilters, updateRecord, updateDay, addKpi, removeKpi, updateDefinition, updateMasterLists, resetToSeed, importState, theme, toggleTheme],
+    [
+      state,
+      filters,
+      setFilters,
+      updateRecord,
+      updateDay,
+      addKpi,
+      removeKpi,
+      updateDefinition,
+      updateMasterLists,
+      updateMeta,
+      updateLeadershipReview,
+      resetToSeed,
+      importState,
+      theme,
+      toggleTheme,
+    ],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

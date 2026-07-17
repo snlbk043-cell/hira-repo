@@ -44,7 +44,7 @@ export function FilterBar() {
 
   return (
     <div
-      className="flex flex-wrap items-end gap-3 rounded-xl border p-3"
+      className="no-print flex flex-wrap items-end gap-3 rounded-xl border p-3"
       style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
     >
       <Select

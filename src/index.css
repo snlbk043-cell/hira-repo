@@ -140,3 +140,32 @@ input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   opacity: 1;
 }
+
+@media print {
+  body {
+    background: #fff !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    width: 100% !important;
+  }
+  .print-page-break {
+    break-before: page;
+  }
+  .rounded-xl {
+    box-shadow: none !important;
+    border-color: #d5dde7 !important;
+  }
+  table th {
+    background: #d9eaf7 !important;
+    color: #000 !important;
+    position: static !important;
+  }
+  table {
+    font-size: 10px;
+  }
+}
+

@@ -9,7 +9,7 @@ import {
   CartesianGrid,
   Legend,
 } from 'recharts';
-import { CheckCircle2, ListChecks, TimerReset } from 'lucide-react';
+import { CheckCircle2, ListChecks, Printer, TimerReset } from 'lucide-react';
 import { FilterBar } from '../components/FilterBar';
 import { Card } from '../components/ui/Card';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -17,7 +17,7 @@ import { StatCard } from '../components/ui/StatCard';
 import { Gauge } from '../components/ui/Gauge';
 import { StatusBadge, TrendBadge } from '../components/ui/StatusBadge';
 import { useAppStore } from '../state/AppStore';
-import { useComputedKpis } from '../lib/useComputed';
+import { TODAY, useComputedKpis } from '../lib/useComputed';
 import {
   departmentSummaries,
   heatmap,
@@ -88,6 +88,15 @@ export function ExecutiveDashboard() {
       <PageHeader
         title="RCPL Factory Daily Management System — Executive Review"
         subtitle="Interactive day and month review · one master KPI entry table · deep performance, trend, exception and action analysis"
+        actions={
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="no-print flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-white/25"
+          >
+            <Printer size={16} /> Print / Export PDF
+          </button>
+        }
       />
 
       <FilterBar />
@@ -317,7 +326,7 @@ export function ExecutiveDashboard() {
                   <Th>Action Owner</Th>
                   <Th>Support Dept</Th>
                   <Th>Due Date</Th>
-                  <Th align="right">Overdue Days</Th>
+                  <Th align="right">Overdue / Due Soon</Th>
                   <Th>Action Status</Th>
                   <Th>Priority</Th>
                 </tr>
@@ -336,8 +345,8 @@ export function ExecutiveDashboard() {
                     <Td>{k.rec.actionOwner ?? '—'}</Td>
                     <Td>{k.rec.supportDepartment ?? '—'}</Td>
                     <Td>{k.rec.dueDate ? new Date(k.rec.dueDate).toLocaleDateString('en-IN') : '—'}</Td>
-                    <Td align="right" className="tabular-nums" style={{ color: k.overdueDays > 0 ? 'var(--status-critical)' : 'var(--text-secondary)' }}>
-                      {k.overdueDays > 0 ? k.overdueDays : '—'}
+                    <Td align="right" className="tabular-nums">
+                      <DueCell dueDate={k.rec.dueDate} overdueDays={k.overdueDays} dueSoonDays={state.meta.dueSoonDays} />
                     </Td>
                     <Td>{k.rec.actionStatus ?? '—'}</Td>
                     <Td>{k.rec.priority ?? '—'}</Td>
@@ -479,6 +488,38 @@ function DayRankTable({ rows }: { rows: ReturnType<typeof useComputedKpis>['kpis
       </table>
     </div>
   );
+}
+
+function DueCell({
+  dueDate,
+  overdueDays,
+  dueSoonDays,
+}: {
+  dueDate: string | null;
+  overdueDays: number;
+  dueSoonDays: number;
+}) {
+  if (overdueDays > 0) {
+    return (
+      <span className="font-semibold" style={{ color: 'var(--status-critical)' }}>
+        {overdueDays}d overdue
+      </span>
+    );
+  }
+  if (dueDate) {
+    const due = new Date(dueDate);
+    const dueMidnight = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
+    const todayMidnight = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()).getTime();
+    const daysUntil = Math.round((dueMidnight - todayMidnight) / 86400000);
+    if (daysUntil >= 0 && daysUntil <= dueSoonDays) {
+      return (
+        <span className="font-semibold" style={{ color: 'var(--status-warning)' }}>
+          Due in {daysUntil}d
+        </span>
+      );
+    }
+  }
+  return <span style={{ color: 'var(--text-secondary)' }}>—</span>;
 }
 
 function Th({ children, align = 'left' }: { children: React.ReactNode; align?: 'left' | 'right' }) {
