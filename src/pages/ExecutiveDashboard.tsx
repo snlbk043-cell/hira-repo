@@ -1,14 +1,4 @@
 import { useMemo } from 'react';
-import {
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Legend,
-} from 'recharts';
 import { CheckCircle2, ListChecks, Printer, TimerReset } from 'lucide-react';
 import { FilterBar } from '../components/FilterBar';
 import { Card } from '../components/ui/Card';
@@ -16,9 +6,16 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { StatCard } from '../components/ui/StatCard';
 import { Gauge } from '../components/ui/Gauge';
 import { StatusBadge, TrendBadge } from '../components/ui/StatusBadge';
+import { Sparkline } from '../components/ui/Sparkline';
+import { InsightsCard } from '../components/ui/InsightsCard';
+import { PillarRadarChart } from '../components/charts/PillarRadarChart';
+import { StatusDonutChart } from '../components/charts/StatusDonutChart';
+import { PlantTrendChart } from '../components/charts/PlantTrendChart';
+import { ActionPipelineChart } from '../components/charts/ActionPipelineChart';
 import { useAppStore } from '../state/AppStore';
 import { TODAY, useComputedKpis } from '../lib/useComputed';
 import {
+  actionStatusCounts,
   departmentSummaries,
   heatmap,
   pillarSummaries,
@@ -26,11 +23,13 @@ import {
   rankByFocusScore,
   scorecard,
 } from '../lib/calc';
+import { generateInsights } from '../lib/narrative';
 import { fmtPercent, fmtSignedNumber, fmtUnitValue, scoreColor } from '../lib/format';
-import type { PQSDC } from '../types';
+import type { ComputedKpi } from '../lib/calc';
+import type { KpiStatus, PQSDC } from '../types';
 
 export function ExecutiveDashboard() {
-  const { state, filters } = useAppStore();
+  const { state, filters, setFilters } = useAppStore();
   const { kpis, dim } = useComputedKpis();
 
   const sc = useMemo(() => scorecard(kpis), [kpis]);
@@ -48,38 +47,51 @@ export function ExecutiveDashboard() {
   );
   const trend = useMemo(() => plantDayTrend(kpis, dim), [kpis, dim]);
   const ranks = useMemo(() => rankByFocusScore(kpis), [kpis]);
+  const pipelineCounts = useMemo(
+    () => actionStatusCounts(kpis, state.masterLists.actionStatuses),
+    [kpis, state.masterLists.actionStatuses],
+  );
+  const insights = useMemo(
+    () => generateInsights({ kpis, deptSummaries, pillarSums, month: filters.month, day: filters.day }),
+    [kpis, deptSummaries, pillarSums, filters.month, filters.day],
+  );
 
-  const included = useMemo(() => kpis.filter((k) => k.included), [kpis]);
+  const search = filters.search.trim().toLowerCase();
+  const visible = useMemo(
+    () =>
+      kpis.filter(
+        (k) =>
+          k.included &&
+          (filters.owner === 'All' || k.def.owner === filters.owner) &&
+          (filters.trend === 'All' || k.trend === filters.trend) &&
+          (!search || k.def.name.toLowerCase().includes(search) || k.def.kpiId.toLowerCase().includes(search)),
+      ),
+    [kpis, filters.owner, filters.trend, search],
+  );
 
   const top10Exceptions = useMemo(
     () =>
-      [...included]
+      [...visible]
         .filter((k) => k.status !== 'No Data')
         .sort((a, b) => b.focusScore - a.focusScore)
         .slice(0, 10),
-    [included],
+    [visible],
   );
 
   const dayRanked = useMemo(
     () =>
-      [...included]
+      [...visible]
         .filter((k) => k.selectedDayScore !== null)
-        .sort((a, b) => (a.selectedDayScore! - b.selectedDayScore!)),
-    [included],
+        .sort((a, b) => a.selectedDayScore! - b.selectedDayScore!),
+    [visible],
   );
   const worst10 = dayRanked.slice(0, 10);
   const best10 = [...dayRanked].reverse().slice(0, 10);
 
   const openActionRows = useMemo(
-    () => [...included].filter((k) => k.openAction).sort((a, b) => b.overdueDays - a.overdueDays),
-    [included],
+    () => [...visible].filter((k) => k.openAction).sort((a, b) => b.overdueDays - a.overdueDays),
+    [visible],
   );
-
-  const chartData = trend.map((p) => ({
-    day: p.day,
-    score: p.score !== null ? Math.round(p.score * 1000) / 10 : null,
-    momentum: p.momentum3 !== null ? Math.round(p.momentum3 * 1000) / 10 : null,
-  }));
 
   const maxHeat = Math.max(0.01, ...heat.map((c) => c.score ?? 0));
 
@@ -143,14 +155,32 @@ export function ExecutiveDashboard() {
         />
       </div>
 
+      {/* Performance intelligence: donut + radar */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <Card
+          title="KPI STATUS MIX"
+          subtitle="Click a segment to filter every table below by that status"
+        >
+          <StatusDonutChart counts={sc.statusCounts} onSliceClick={(status: KpiStatus) => setFilters({ status })} />
+        </Card>
+        <Card title="PQSDC PILLAR SHAPE" subtitle="MTD pace score across all five pillars at a glance">
+          <PillarRadarChart data={pillarSums} />
+        </Card>
+      </div>
+
       {/* Department cards */}
       <Card title="EXECUTIVE SCORECARD — DEPARTMENT PERFORMANCE" subtitle="KPI count, weighted MTD pace score, completion and open actions by department">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
           {deptSummaries.map((d) => (
-            <div
+            <button
+              type="button"
               key={d.department}
-              className="rounded-lg border p-3"
-              style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
+              onClick={() => setFilters({ department: filters.department === d.department ? 'All' : d.department })}
+              className="rounded-lg border p-3 text-left transition hover:shadow-md"
+              style={{
+                borderColor: filters.department === d.department ? 'var(--brand-primary)' : 'var(--border)',
+                background: 'var(--surface-2)',
+              }}
             >
               <p className="truncate text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {d.department}
@@ -168,7 +198,7 @@ export function ExecutiveDashboard() {
                   {d.openActions} open
                 </span>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </Card>
@@ -177,10 +207,15 @@ export function ExecutiveDashboard() {
       <Card title="PQSDC PILLAR CARDS" subtitle="Weighted MTD pace score by pillar (Productivity, Quality, Safety, Delivery, Cost)">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {pillarSums.map((p) => (
-            <div
+            <button
+              type="button"
               key={p.pillar}
-              className="flex items-center gap-3 rounded-lg border p-3"
-              style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
+              onClick={() => setFilters({ pqsdc: filters.pqsdc === p.pillar ? 'All' : p.pillar })}
+              className="flex items-center gap-3 rounded-lg border p-3 text-left transition hover:shadow-md"
+              style={{
+                borderColor: filters.pqsdc === p.pillar ? 'var(--brand-primary)' : 'var(--border)',
+                background: 'var(--surface-2)',
+              }}
             >
               <Gauge value={p.score} size={56} strokeWidth={7} color={scoreColor(p.score)} />
               <div className="min-w-0">
@@ -191,7 +226,7 @@ export function ExecutiveDashboard() {
                   {p.kpis} KPIs · {p.attention} attention
                 </p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </Card>
@@ -201,45 +236,9 @@ export function ExecutiveDashboard() {
         <Card
           className="xl:col-span-3"
           title="PLANT SCORE TREND — DAY BY DAY"
-          subtitle="Weighted daily score vs 100% target, with 3-day momentum"
+          subtitle={`Weighted daily score vs 100% target, with 3-day momentum — the red marker tracks your selected Day ${filters.day}`}
         >
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 5, right: 12, left: -18, bottom: 0 }}>
-                <CartesianGrid stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="day" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} stroke="var(--border-strong)" />
-                <YAxis
-                  domain={[0, 130]}
-                  tickFormatter={(v) => `${v}%`}
-                  tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
-                  stroke="var(--border-strong)"
-                  width={44}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                  formatter={(value) => `${value}%`}
-                  labelFormatter={(l) => `Day ${l}`}
-                />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Line type="monotone" dataKey="score" name="Daily score" stroke="var(--series-blue)" strokeWidth={2} dot={{ r: 2 }} connectNulls />
-                <Line
-                  type="monotone"
-                  dataKey="momentum"
-                  name="3-day momentum"
-                  stroke="var(--series-orange)"
-                  strokeWidth={2}
-                  strokeDasharray="4 3"
-                  dot={false}
-                  connectNulls
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <PlantTrendChart trend={trend} selectedDay={filters.day} />
         </Card>
 
         {/* Heat map */}
@@ -290,6 +289,11 @@ export function ExecutiveDashboard() {
         </Card>
       </div>
 
+      {/* Narrative review */}
+      <Card title="REVIEW NARRATIVE — WHAT THE NUMBERS ARE SAYING" subtitle="Auto-written from the live data above, for meeting-ready reading">
+        <InsightsCard insights={insights} />
+      </Card>
+
       {/* Top 10 exceptions */}
       <Card
         title={`FACTORY MANAGER FOCUS — DAY ${filters.day} TOP 10 KPI EXCEPTIONS`}
@@ -301,62 +305,63 @@ export function ExecutiveDashboard() {
       {/* Best/worst 10 */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card title={`SELECTED DAY ${filters.day} — WORST 10`} subtitle="Lowest scoring KPIs for the selected day">
-          <DayRankTable rows={worst10} />
+          <DayRankTable rows={worst10} day={filters.day} />
         </Card>
         <Card title={`SELECTED DAY ${filters.day} — BEST 10`} subtitle="Highest scoring KPIs for the selected day">
-          <DayRankTable rows={best10} />
+          <DayRankTable rows={best10} day={filters.day} />
         </Card>
       </div>
 
       {/* Risk & action analysis */}
-      <Card title="RISK, ACTION AND COMPLETION ANALYSIS" subtitle="Open corrective actions across departments, ranked by days overdue">
-        {openActionRows.length === 0 ? (
-          <p className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-            No open actions for the current filter selection.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px] border-collapse text-xs">
-              <thead>
-                <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
-                  <Th>KPI</Th>
-                  <Th>Department</Th>
-                  <Th>PQSDC</Th>
-                  <Th>Status</Th>
-                  <Th>Action Owner</Th>
-                  <Th>Support Dept</Th>
-                  <Th>Due Date</Th>
-                  <Th align="right">Overdue / Due Soon</Th>
-                  <Th>Action Status</Th>
-                  <Th>Priority</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {openActionRows.map((k) => (
-                  <tr key={k.def.kpiId} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                    <Td className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                      {k.def.name}
-                    </Td>
-                    <Td>{k.def.department}</Td>
-                    <Td>{k.def.pqsdc}</Td>
-                    <Td>
-                      <StatusBadge status={k.status} />
-                    </Td>
-                    <Td>{k.rec.actionOwner ?? '—'}</Td>
-                    <Td>{k.rec.supportDepartment ?? '—'}</Td>
-                    <Td>{k.rec.dueDate ? new Date(k.rec.dueDate).toLocaleDateString('en-IN') : '—'}</Td>
-                    <Td align="right" className="tabular-nums">
-                      <DueCell dueDate={k.rec.dueDate} overdueDays={k.overdueDays} dueSoonDays={state.meta.dueSoonDays} />
-                    </Td>
-                    <Td>{k.rec.actionStatus ?? '—'}</Td>
-                    <Td>{k.rec.priority ?? '—'}</Td>
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-5">
+        <Card className="xl:col-span-2" title="ACTION STATUS PIPELINE" subtitle="Open corrective actions by stage">
+          <ActionPipelineChart data={pipelineCounts} />
+        </Card>
+        <Card className="xl:col-span-3" title="RISK, ACTION AND COMPLETION ANALYSIS" subtitle="Open corrective actions across departments, ranked by days overdue">
+          {openActionRows.length === 0 ? (
+            <p className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+              No open actions for the current filter selection.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] border-collapse text-xs">
+                <thead>
+                  <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
+                    <Th>KPI</Th>
+                    <Th>Department</Th>
+                    <Th>Status</Th>
+                    <Th>Action Owner</Th>
+                    <Th>Due Date</Th>
+                    <Th align="right">Overdue / Due Soon</Th>
+                    <Th>Action Status</Th>
+                    <Th>Priority</Th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+                </thead>
+                <tbody>
+                  {openActionRows.map((k) => (
+                    <tr key={k.def.kpiId} className="border-t" style={{ borderColor: 'var(--border)' }}>
+                      <Td className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                        {k.def.name}
+                      </Td>
+                      <Td>{k.def.department}</Td>
+                      <Td>
+                        <StatusBadge status={k.status} />
+                      </Td>
+                      <Td>{k.rec.actionOwner ?? '—'}</Td>
+                      <Td>{k.rec.dueDate ? new Date(k.rec.dueDate).toLocaleDateString('en-IN') : '—'}</Td>
+                      <Td align="right" className="tabular-nums">
+                        <DueCell dueDate={k.rec.dueDate} overdueDays={k.overdueDays} dueSoonDays={state.meta.dueSoonDays} />
+                      </Td>
+                      <Td>{k.rec.actionStatus ?? '—'}</Td>
+                      <Td>{k.rec.priority ?? '—'}</Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }
@@ -365,7 +370,7 @@ function ExceptionsTable({
   rows,
   ranks,
 }: {
-  rows: ReturnType<typeof useComputedKpis>['kpis'];
+  rows: ComputedKpi[];
   day: number;
   ranks: Map<string, number>;
 }) {
@@ -378,18 +383,15 @@ function ExceptionsTable({
   }
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[980px] border-collapse text-xs">
+      <table className="w-full min-w-[1080px] border-collapse text-xs">
         <thead>
           <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
             <Th>Rank</Th>
             <Th>Department</Th>
-            <Th>PQSDC</Th>
             <Th>KPI</Th>
-            <Th align="right">Daily Target</Th>
-            <Th align="right">Day Actual</Th>
             <Th align="right">Day Score</Th>
-            <Th align="right">MTD Actual</Th>
             <Th align="right">MTD Pace</Th>
+            <Th>Month Trend</Th>
             <Th>Status</Th>
             <Th>Trend</Th>
             <Th>Challenge / Reason</Th>
@@ -403,24 +405,17 @@ function ExceptionsTable({
                 {ranks.get(k.def.kpiId) ?? '—'}
               </Td>
               <Td>{k.def.department}</Td>
-              <Td>{k.def.pqsdc}</Td>
               <Td className="font-medium" style={{ color: 'var(--text-primary)' }}>
                 {k.def.name}
-              </Td>
-              <Td align="right" className="tabular-nums">
-                {fmtUnitValue(k.effectiveDailyTarget, k.def.unit, 1)}
-              </Td>
-              <Td align="right" className="tabular-nums">
-                {fmtUnitValue(k.selectedDayActual, k.def.unit, 1)}
               </Td>
               <Td align="right" className="tabular-nums" style={{ color: scoreColor(k.selectedDayScore) }}>
                 {fmtPercent(k.selectedDayScore, 0)}
               </Td>
-              <Td align="right" className="tabular-nums">
-                {fmtUnitValue(k.mtdActual, k.def.unit, 1)}
-              </Td>
               <Td align="right" className="tabular-nums" style={{ color: scoreColor(k.mtdPaceScore) }}>
                 {fmtPercent(k.mtdPaceScore, 0)}
+              </Td>
+              <Td>
+                <Sparkline data={k.rec.days} color={scoreColor(k.mtdPaceScore)} />
               </Td>
               <Td>
                 <StatusBadge status={k.status} />
@@ -442,7 +437,7 @@ function ExceptionsTable({
   );
 }
 
-function DayRankTable({ rows }: { rows: ReturnType<typeof useComputedKpis>['kpis'] }) {
+function DayRankTable({ rows, day }: { rows: ComputedKpi[]; day: number }) {
   if (rows.length === 0) {
     return (
       <p className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
@@ -452,7 +447,7 @@ function DayRankTable({ rows }: { rows: ReturnType<typeof useComputedKpis>['kpis
   }
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[560px] border-collapse text-xs">
+      <table className="w-full min-w-[620px] border-collapse text-xs">
         <thead>
           <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
             <Th>Department</Th>
@@ -460,6 +455,7 @@ function DayRankTable({ rows }: { rows: ReturnType<typeof useComputedKpis>['kpis
             <Th align="right">Actual</Th>
             <Th align="right">Score</Th>
             <Th align="right">Gap</Th>
+            <Th>Month</Th>
             <Th>Status</Th>
           </tr>
         </thead>
@@ -478,6 +474,9 @@ function DayRankTable({ rows }: { rows: ReturnType<typeof useComputedKpis>['kpis
               </Td>
               <Td align="right" className="tabular-nums">
                 {fmtSignedNumber(k.selectedDayGap, 1)}
+              </Td>
+              <Td>
+                <Sparkline data={k.rec.days} color={scoreColor(k.mtdPaceScore)} highlightIndex={day - 1} />
               </Td>
               <Td>
                 <StatusBadge status={k.selectedDayStatus} />

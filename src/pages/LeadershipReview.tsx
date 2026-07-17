@@ -1,15 +1,19 @@
 import { useMemo, useState } from 'react';
-import { Printer, Presentation } from 'lucide-react';
+import { Printer, Presentation, FileText } from 'lucide-react';
 import { FilterBar } from '../components/FilterBar';
 import { Card } from '../components/ui/Card';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Gauge } from '../components/ui/Gauge';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import { InsightsCard } from '../components/ui/InsightsCard';
+import { PillarRadarChart } from '../components/charts/PillarRadarChart';
 import { useAppStore } from '../state/AppStore';
 import { useComputedKpis } from '../lib/useComputed';
 import { departmentSummaries, pillarSummaries, scorecard } from '../lib/calc';
+import { generateInsights } from '../lib/narrative';
 import { fmtPercent, scoreColor } from '../lib/format';
 import { exportLeadershipDeck } from '../lib/exportPptx';
+import { exportLeadershipDocx } from '../lib/exportWord';
 import type { PQSDC } from '../types';
 
 export function LeadershipReview() {
@@ -43,6 +47,33 @@ export function LeadershipReview() {
         .slice(0, 8),
     [kpis],
   );
+  const insights = useMemo(
+    () => generateInsights({ kpis, deptSummaries, pillarSums, month: filters.month, day: filters.day }),
+    [kpis, deptSummaries, pillarSums, filters.month, filters.day],
+  );
+
+  const [exportingDocx, setExportingDocx] = useState(false);
+  const handleExportDocx = async () => {
+    setExportingDocx(true);
+    try {
+      await exportLeadershipDocx({
+        state,
+        filters,
+        scorecard: sc,
+        deptSummaries,
+        pillarSums,
+        topExceptions,
+        insights,
+        reviewedBy: review.reviewedBy,
+        designation: review.designation,
+        reviewDate: review.reviewDate,
+        comments: review.comments,
+        decision: review.decision,
+      });
+    } finally {
+      setExportingDocx(false);
+    }
+  };
 
   const handleExportPptx = async () => {
     setExporting(true);
@@ -85,6 +116,15 @@ export function LeadershipReview() {
         </button>
         <button
           type="button"
+          onClick={handleExportDocx}
+          disabled={exportingDocx}
+          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-bold text-white shadow-sm transition hover:brightness-95 disabled:opacity-60"
+          style={{ background: '#2b579a' }}
+        >
+          <FileText size={16} /> {exportingDocx ? 'Building document…' : 'Export Word'}
+        </button>
+        <button
+          type="button"
           onClick={handleExportPptx}
           disabled={exporting}
           className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-bold text-white shadow-sm transition hover:brightness-95 disabled:opacity-60"
@@ -116,6 +156,10 @@ export function LeadershipReview() {
           </div>
         </div>
       </div>
+
+      <Card title="REVIEW NARRATIVE" subtitle="Auto-written summary for meeting-ready reading — hand this straight to leadership">
+        <InsightsCard insights={insights} />
+      </Card>
 
       <Card title="DEPARTMENT PERFORMANCE SUMMARY">
         <div className="overflow-x-auto">
@@ -150,34 +194,39 @@ export function LeadershipReview() {
         </div>
       </Card>
 
-      <Card title="PQSDC PILLAR SUMMARY">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[520px] border-collapse text-xs">
-            <thead>
-              <tr className="text-left text-xs" style={{ background: 'var(--brand-primary)', color: '#fff' }}>
-                <th className="px-2 py-2 font-semibold">Pillar</th>
-                <th className="px-2 py-2 text-right font-semibold">KPIs</th>
-                <th className="px-2 py-2 text-right font-semibold">MTD Pace Score</th>
-                <th className="px-2 py-2 text-right font-semibold">Attention</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pillarSums.map((p) => (
-                <tr key={p.pillar} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                  <td className="px-2 py-1.5 font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {p.pillar}
-                  </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">{p.kpis}</td>
-                  <td className="px-2 py-1.5 text-right tabular-nums" style={{ color: scoreColor(p.score) }}>
-                    {fmtPercent(p.score, 0)}
-                  </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">{p.attention}</td>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <Card title="PQSDC PILLAR SUMMARY">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[420px] border-collapse text-xs">
+              <thead>
+                <tr className="text-left text-xs" style={{ background: 'var(--brand-primary)', color: '#fff' }}>
+                  <th className="px-2 py-2 font-semibold">Pillar</th>
+                  <th className="px-2 py-2 text-right font-semibold">KPIs</th>
+                  <th className="px-2 py-2 text-right font-semibold">MTD Pace Score</th>
+                  <th className="px-2 py-2 text-right font-semibold">Attention</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody>
+                {pillarSums.map((p) => (
+                  <tr key={p.pillar} className="border-t" style={{ borderColor: 'var(--border)' }}>
+                    <td className="px-2 py-1.5 font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {p.pillar}
+                    </td>
+                    <td className="px-2 py-1.5 text-right tabular-nums">{p.kpis}</td>
+                    <td className="px-2 py-1.5 text-right tabular-nums" style={{ color: scoreColor(p.score) }}>
+                      {fmtPercent(p.score, 0)}
+                    </td>
+                    <td className="px-2 py-1.5 text-right tabular-nums">{p.attention}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+        <Card title="PQSDC PILLAR SHAPE">
+          <PillarRadarChart data={pillarSums} />
+        </Card>
+      </div>
 
       <Card title="TOP EXCEPTIONS FOR LEADERSHIP ATTENTION" subtitle="Ranked by focus score — status severity, MTD pace gap and overdue action days">
         <div className="overflow-x-auto">

@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { useMemo } from 'react';
 import { FilterBar } from '../components/FilterBar';
 import { Card } from '../components/ui/Card';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Gauge } from '../components/ui/Gauge';
+import { Sparkline } from '../components/ui/Sparkline';
 import { ForecastBadge, StatusBadge, TrendBadge } from '../components/ui/StatusBadge';
+import { DepartmentComposedChart } from '../components/charts/DepartmentComposedChart';
+import { PillarRadarChart } from '../components/charts/PillarRadarChart';
 import { useAppStore } from '../state/AppStore';
 import { useComputedKpis } from '../lib/useComputed';
 import { departmentSummaries, pillarSummaries, heatmap } from '../lib/calc';
@@ -12,9 +14,9 @@ import { fmtPercent, fmtUnitValue, scoreColor } from '../lib/format';
 import type { PQSDC } from '../types';
 
 export function DepartmentPerformance() {
-  const { state } = useAppStore();
+  const { state, filters, setFilters } = useAppStore();
   const { kpis } = useComputedKpis();
-  const [selectedDept, setSelectedDept] = useState('All');
+  const selectedDept = filters.department;
 
   const deptSummaries = useMemo(
     () => departmentSummaries(kpis, state.masterLists.departments),
@@ -29,12 +31,18 @@ export function DepartmentPerformance() {
     [kpis, state.masterLists.departments, state.masterLists.pillars],
   );
 
+  const search = filters.search.trim().toLowerCase();
   const scopedKpis = useMemo(
     () =>
       kpis.filter(
-        (k) => k.included && (selectedDept === 'All' || k.def.department === selectedDept),
+        (k) =>
+          k.included &&
+          (selectedDept === 'All' || k.def.department === selectedDept) &&
+          (filters.owner === 'All' || k.def.owner === filters.owner) &&
+          (filters.trend === 'All' || k.trend === filters.trend) &&
+          (!search || k.def.name.toLowerCase().includes(search) || k.def.kpiId.toLowerCase().includes(search)),
       ),
-    [kpis, selectedDept],
+    [kpis, selectedDept, filters.owner, filters.trend, search],
   );
 
   const plantPace = useMemo(() => {
@@ -48,11 +56,6 @@ export function DepartmentPerformance() {
     }
     return den === 0 ? null : num / den;
   }, [kpis, selectedDept]);
-
-  const barData = deptSummaries.map((d) => ({
-    department: d.department,
-    score: d.score !== null ? Math.round(d.score * 1000) / 10 : 0,
-  }));
 
   const maxHeat = Math.max(0.01, ...heat.map((c) => c.score ?? 0));
 
@@ -75,7 +78,7 @@ export function DepartmentPerformance() {
               <button
                 key={d}
                 type="button"
-                onClick={() => setSelectedDept(d)}
+                onClick={() => setFilters({ department: d })}
                 className="rounded-full border px-3 py-1 text-xs font-medium transition"
                 style={{
                   borderColor: selectedDept === d ? 'var(--brand-primary)' : 'var(--border)',
@@ -98,45 +101,33 @@ export function DepartmentPerformance() {
           </p>
         </Card>
 
-        <Card className="lg:col-span-2" title="DEPARTMENT MTD SCORE COMPARISON">
-          <div className="h-56 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barData} margin={{ top: 5, right: 12, left: -18, bottom: 0 }}>
-                <CartesianGrid stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="department" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} stroke="var(--border-strong)" interval={0} angle={-20} textAnchor="end" height={50} />
-                <YAxis domain={[0, 120]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} stroke="var(--border-strong)" width={44} />
-                <Tooltip
-                  contentStyle={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
-                  formatter={(v) => [`${v}%`, 'MTD Score']}
-                />
-                <Bar dataKey="score" radius={[4, 4, 0, 0]} maxBarSize={40}>
-                  {barData.map((d) => (
-                    <Cell key={d.department} fill={scoreColor(d.score / 100)} fillOpacity={d.department === selectedDept ? 1 : 0.55} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        <Card className="lg:col-span-2" title="DEPARTMENT MTD SCORE VS TARGET & COMPLETION" subtitle="Click a bar to focus that department">
+          <DepartmentComposedChart data={deptSummaries} selectedDept={selectedDept} onBarClick={(dept) => setFilters({ department: dept })} />
         </Card>
       </div>
 
-      <Card title="PQSDC PILLAR CARDS — SPECIFIC MTD PACE TO EXPECTED TARGET">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {pillarSums.map((p) => (
-            <div key={p.pillar} className="flex items-center gap-3 rounded-lg border p-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}>
-              <Gauge value={p.score} size={52} strokeWidth={6} color={scoreColor(p.score)} />
-              <div className="min-w-0">
-                <p className="truncate text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {p.pillar}
-                </p>
-                <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                  {p.kpis} KPIs · {p.attention} attention
-                </p>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <Card title="PQSDC PILLAR CARDS — SPECIFIC MTD PACE TO EXPECTED TARGET">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {pillarSums.map((p) => (
+              <div key={p.pillar} className="flex items-center gap-3 rounded-lg border p-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}>
+                <Gauge value={p.score} size={52} strokeWidth={6} color={scoreColor(p.score)} />
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    {p.pillar}
+                  </p>
+                  <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                    {p.kpis} KPIs · {p.attention} attention
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </Card>
+            ))}
+          </div>
+        </Card>
+        <Card title="PQSDC PILLAR SHAPE">
+          <PillarRadarChart data={pillarSums} />
+        </Card>
+      </div>
 
       <Card title="DYNAMIC HEAT MAP — DEPARTMENT × PQSDC" subtitle="Master-data driven, weighted MTD pace score">
         <div className="overflow-x-auto">
@@ -182,10 +173,10 @@ export function DepartmentPerformance() {
 
       <Card
         title="FILTERED KPI MASTER DETAIL"
-        subtitle="Powered by the calculation engine — effective daily target, forecast at end-of-month, and trend/forecast signal"
+        subtitle="Powered by the calculation engine — effective daily target, forecast at end-of-month, trend/forecast signal and the full month sparkline"
       >
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1080px] border-collapse text-xs">
+          <table className="w-full min-w-[1180px] border-collapse text-xs">
             <thead>
               <tr className="sticky top-0 z-10 text-left text-xs" style={{ background: 'var(--brand-primary)', color: '#fff' }}>
                 <th className="px-2 py-2 font-semibold">KPI</th>
@@ -193,9 +184,9 @@ export function DepartmentPerformance() {
                 <th className="px-2 py-2 font-semibold">PQSDC</th>
                 <th className="px-2 py-2 text-right font-semibold">Daily Target</th>
                 <th className="px-2 py-2 text-right font-semibold">MTD Actual</th>
-                <th className="px-2 py-2 text-right font-semibold">Expected MTD</th>
                 <th className="px-2 py-2 text-right font-semibold">Forecast EOM</th>
                 <th className="px-2 py-2 text-right font-semibold">MTD Pace</th>
+                <th className="px-2 py-2 font-semibold">Month</th>
                 <th className="px-2 py-2 font-semibold">Forecast Signal</th>
                 <th className="px-2 py-2 font-semibold">Trend</th>
                 <th className="px-2 py-2 font-semibold">Status</th>
@@ -222,13 +213,13 @@ export function DepartmentPerformance() {
                       {fmtUnitValue(k.mtdActual, k.def.unit, 1)}
                     </td>
                     <td className="tabular-nums px-2 py-2 text-right" style={{ color: 'var(--text-secondary)' }}>
-                      {fmtUnitValue(k.expectedMtdTarget, k.def.unit, 1)}
-                    </td>
-                    <td className="tabular-nums px-2 py-2 text-right" style={{ color: 'var(--text-secondary)' }}>
                       {fmtUnitValue(k.forecastEom, k.def.unit, 1)}
                     </td>
                     <td className="tabular-nums px-2 py-2 text-right" style={{ color: scoreColor(k.mtdPaceScore) }}>
                       {fmtPercent(k.mtdPaceScore, 0)}
+                    </td>
+                    <td className="px-2 py-2">
+                      <Sparkline data={k.rec.days} color={scoreColor(k.mtdPaceScore)} highlightIndex={filters.day - 1} />
                     </td>
                     <td className="px-2 py-2">
                       <ForecastBadge signal={k.forecastSignal} />

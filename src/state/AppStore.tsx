@@ -26,14 +26,26 @@ function loadState(): AppState {
   return initialState;
 }
 
+const DEFAULT_FILTERS: Filters = {
+  year: 2026,
+  month: 'July',
+  department: 'All',
+  pqsdc: 'All',
+  day: 17,
+  status: 'All',
+  owner: 'All',
+  trend: 'All',
+  search: '',
+};
+
 function loadFilters(): Filters {
   try {
     const raw = localStorage.getItem(FILTERS_KEY);
-    if (raw) return JSON.parse(raw) as Filters;
+    if (raw) return { ...DEFAULT_FILTERS, ...(JSON.parse(raw) as Partial<Filters>) };
   } catch {
     /* ignore */
   }
-  return { year: 2026, month: 'July', department: 'All', pqsdc: 'All', day: 17, status: 'All' };
+  return DEFAULT_FILTERS;
 }
 
 interface AppContextValue {

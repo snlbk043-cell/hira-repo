@@ -105,4 +105,7 @@ export interface Filters {
   pqsdc: string; // 'All' or pillar name
   day: number; // 1-31 selected day
   status: string; // 'All' or KpiStatus
+  owner: string; // 'All' or owner name — view-level slicer, does not affect aggregate scoring
+  trend: string; // 'All' or TrendDirection — view-level slicer
+  search: string; // free-text KPI name/ID search — view-level slicer
 }

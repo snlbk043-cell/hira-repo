@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Table2,
   Building2,
-  Database,
   Moon,
   Sun,
   Factory,
@@ -18,7 +17,6 @@ const NAV_ITEMS = [
   { to: '/data-entry', label: 'KPI Data Entry', icon: Table2 },
   { to: '/departments', label: 'Department Performance', icon: Building2 },
   { to: '/leadership-review', label: 'Leadership Review', icon: ClipboardCheck },
-  { to: '/master-data', label: 'Master Data', icon: Database },
   { to: '/settings', label: 'Settings', icon: SlidersHorizontal },
 ];
 
