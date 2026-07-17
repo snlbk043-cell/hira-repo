@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { FilterBar } from '../components/FilterBar';
 import { Card } from '../components/ui/Card';
+import { PageHeader } from '../components/ui/PageHeader';
 import { Gauge } from '../components/ui/Gauge';
 import { ForecastBadge, StatusBadge, TrendBadge } from '../components/ui/StatusBadge';
 import { useAppStore } from '../state/AppStore';
@@ -57,15 +58,10 @@ export function DepartmentPerformance() {
 
   return (
     <div className="flex flex-col gap-5 pb-10">
-      <div>
-        <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-          Enterprise Department Performance — KPI Pace, Forecast &amp; Control
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Lean daily management view · daily target breakdown · MTD pace · end-of-month forecast · heat map ·
-          exception control
-        </p>
-      </div>
+      <PageHeader
+        title="Enterprise Department Performance — KPI Pace, Forecast & Control"
+        subtitle="Lean daily management view · daily target breakdown · MTD pace · end-of-month forecast · heat map · exception control"
+      />
 
       <FilterBar />
 
@@ -82,9 +78,9 @@ export function DepartmentPerformance() {
                 onClick={() => setSelectedDept(d)}
                 className="rounded-full border px-3 py-1 text-xs font-medium transition"
                 style={{
-                  borderColor: selectedDept === d ? 'var(--series-blue)' : 'var(--border)',
-                  background: selectedDept === d ? 'color-mix(in srgb, var(--series-blue) 16%, transparent)' : 'transparent',
-                  color: selectedDept === d ? 'var(--series-blue)' : 'var(--text-secondary)',
+                  borderColor: selectedDept === d ? 'var(--brand-primary)' : 'var(--border)',
+                  background: selectedDept === d ? 'var(--brand-primary)' : 'transparent',
+                  color: selectedDept === d ? '#fff' : 'var(--text-secondary)',
                 }}
               >
                 {d}
@@ -146,10 +142,10 @@ export function DepartmentPerformance() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] border-collapse text-xs">
             <thead>
-              <tr>
-                <th className="p-1 text-left" />
+              <tr style={{ background: 'var(--brand-primary)' }}>
+                <th className="p-1.5 text-left" />
                 {state.masterLists.pillars.map((p) => (
-                  <th key={p} className="p-1 text-center font-medium" style={{ color: 'var(--text-muted)' }}>
+                  <th key={p} className="p-1.5 text-center text-xs font-semibold" style={{ color: '#fff' }}>
                     {p}
                   </th>
                 ))}
@@ -191,7 +187,7 @@ export function DepartmentPerformance() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1080px] border-collapse text-xs">
             <thead>
-              <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
+              <tr className="sticky top-0 z-10 text-left text-xs" style={{ background: 'var(--brand-primary)', color: '#fff' }}>
                 <th className="px-2 py-2 font-semibold">KPI</th>
                 <th className="px-2 py-2 font-semibold">Department</th>
                 <th className="px-2 py-2 font-semibold">PQSDC</th>

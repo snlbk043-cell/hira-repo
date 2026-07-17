@@ -28,7 +28,7 @@ export function Card({
         <div className="flex items-center justify-between gap-3 px-4 pt-4">
           <div>
             {title && (
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <h3 className="text-sm font-bold" style={{ color: 'var(--brand-primary)' }}>
                 {title}
               </h3>
             )}

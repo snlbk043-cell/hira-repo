@@ -30,8 +30,8 @@ export function StatCard({
         )}
       </div>
       <span
-        className="tabular-nums text-2xl font-semibold leading-tight"
-        style={{ color: color ?? 'var(--text-primary)' }}
+        className="tabular-nums text-2xl font-bold leading-tight"
+        style={{ color: color ?? 'var(--brand-primary)' }}
       >
         {value}
       </span>

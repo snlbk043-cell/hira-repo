@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Download, Plus, RotateCcw, Trash2, Upload, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Card } from '../components/ui/Card';
+import { PageHeader } from '../components/ui/PageHeader';
 import { useAppStore } from '../state/AppStore';
 import type { AppState, Direction, Aggregation, PQSDC } from '../types';
 
@@ -98,26 +99,21 @@ export function MasterData() {
 
   return (
     <div className="flex flex-col gap-5 pb-10">
-      <div>
-        <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-          DMS Master Data
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Edit lists here before using KPI Data Entry. KPI entry dropdowns, department heat maps and filters are
-          connected to these lists.
-        </p>
-      </div>
+      <PageHeader
+        title="DMS Master Data"
+        subtitle="Edit lists here before using KPI Data Entry. KPI entry dropdowns, department heat maps and filters are connected to these lists."
+      />
 
       <Card title="DATA MANAGEMENT" subtitle="Export or restore the full DMS state — all KPI definitions, records and master lists">
         <div className="flex flex-wrap gap-2">
-          <ActionButton icon={<Download size={14} />} label="Export JSON" onClick={exportJSON} />
-          <ActionButton icon={<FileSpreadsheet size={14} />} label="Export Excel" onClick={exportExcel} />
-          <ActionButton icon={<Download size={14} />} label="Export CSV" onClick={exportCSV} />
-          <ActionButton icon={<Upload size={14} />} label="Import JSON" onClick={() => fileRef.current?.click()} />
+          <ActionButton icon={<Download size={14} />} label="Export JSON" variant="success" onClick={exportJSON} />
+          <ActionButton icon={<FileSpreadsheet size={14} />} label="Export Excel" variant="success" onClick={exportExcel} />
+          <ActionButton icon={<Download size={14} />} label="Export CSV" variant="success" onClick={exportCSV} />
+          <ActionButton icon={<Upload size={14} />} label="Import JSON" variant="secondary" onClick={() => fileRef.current?.click()} />
           <ActionButton
             icon={<RotateCcw size={14} />}
             label="Reset to Sample Data"
-            danger
+            variant="danger"
             onClick={() => {
               if (confirm('Reset all data back to the original workbook sample? This cannot be undone.')) resetToSeed();
             }}
@@ -146,7 +142,7 @@ export function MasterData() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] border-collapse text-xs">
             <thead>
-              <tr className="text-left" style={{ color: 'var(--text-muted)' }}>
+              <tr className="sticky top-0 z-10 text-left text-xs" style={{ background: 'var(--brand-primary)', color: '#fff' }}>
                 <th className="px-2 py-2 font-semibold">KPI ID</th>
                 <th className="px-2 py-2 font-semibold">Department</th>
                 <th className="px-2 py-2 font-semibold">PQSDC</th>
@@ -249,8 +245,8 @@ function ListEditor({ label, listKey }: { label: string; listKey: (typeof LIST_K
         <button
           type="button"
           onClick={add}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-white"
-          style={{ background: 'var(--series-blue)' }}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-white shadow-sm transition hover:brightness-95"
+          style={{ background: 'var(--brand-primary)' }}
         >
           <Plus size={14} />
         </button>
@@ -298,26 +294,30 @@ function EditableSelect({ value, options, onChange }: { value: string; options: 
   );
 }
 
+const BUTTON_VARIANTS = {
+  primary: 'var(--brand-primary)',
+  success: '#15803d',
+  secondary: '#334155',
+  danger: '#b91c1c',
+} as const;
+
 function ActionButton({
   icon,
   label,
   onClick,
-  danger,
+  variant = 'primary',
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
-  danger?: boolean;
+  variant?: keyof typeof BUTTON_VARIANTS;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition hover:opacity-80"
-      style={{
-        borderColor: danger ? 'var(--status-critical)' : 'var(--border)',
-        color: danger ? 'var(--status-critical)' : 'var(--text-secondary)',
-      }}
+      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:brightness-95"
+      style={{ background: BUTTON_VARIANTS[variant] }}
     >
       {icon}
       {label}

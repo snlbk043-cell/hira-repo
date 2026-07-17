@@ -593,8 +593,8 @@ function AddKpiModal({
           <button
             type="button"
             onClick={submit}
-            className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white"
-            style={{ background: 'var(--series-blue)' }}
+            className="rounded-lg px-3 py-1.5 text-sm font-bold text-white shadow-sm transition hover:brightness-95"
+            style={{ background: 'var(--brand-primary)' }}
           >
             Add KPI
           </button>
