@@ -2,16 +2,21 @@
 
 :root {
   color-scheme: light;
-  --surface-0: #f9f9f7;
-  --surface-1: #fcfcfb;
+  /* RCPL brand — matches the RCPL Campa Cola Smart HIRA Generator tool */
+  --brand-primary: #0f4c81;
+  --brand-primary-2: #0b6ea8;
+  --brand-accent: #d71920;
+
+  --surface-0: #f4f7fb;
+  --surface-1: #ffffff;
   --surface-2: #ffffff;
-  --text-primary: #0b0b0b;
+  --text-primary: #1f2937;
   --text-secondary: #52514e;
-  --text-muted: #898781;
-  --border: #e1e0d9;
+  --text-muted: #64748b;
+  --border: #d8e1eb;
   --border-strong: #c3c2b7;
 
-  --series-blue: #2a78d6;
+  --series-blue: #0f4c81;
   --series-green: #008300;
   --series-magenta: #e87ba4;
   --series-yellow: #eda100;
@@ -24,13 +29,17 @@
   --status-warning: #fab219;
   --status-serious: #ec835a;
   --status-critical: #d03b3b;
-  --status-info: #2a78d6;
+  --status-info: #0f4c81;
 
   --success-text: #006300;
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
+  --brand-primary: #2e7cc9;
+  --brand-primary-2: #3aa0d8;
+  --brand-accent: #e8555c;
+
   --surface-0: #0d0d0d;
   --surface-1: #1a1a19;
   --surface-2: #202020;
@@ -61,6 +70,10 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
+    --brand-primary: #2e7cc9;
+    --brand-primary-2: #3aa0d8;
+    --brand-accent: #e8555c;
+
     --surface-0: #0d0d0d;
     --surface-1: #1a1a19;
     --surface-2: #202020;

@@ -25,12 +25,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen" style={{ background: 'var(--surface-0)' }}>
       <aside
         className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r"
-        style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
+        style={{ background: 'var(--surface-1)', borderColor: 'var(--border)', borderTop: '3px solid var(--brand-accent)' }}
       >
         <div className="flex items-center gap-2 px-5 py-5">
           <div
             className="flex h-9 w-9 items-center justify-center rounded-lg"
-            style={{ background: 'var(--series-blue)' }}
+            style={{ background: 'linear-gradient(135deg, var(--brand-primary), var(--brand-primary-2))' }}
           >
             <Factory size={18} color="#fff" />
           </div>
@@ -55,8 +55,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 }`
               }
               style={({ isActive }) => ({
-                background: isActive ? 'color-mix(in srgb, var(--series-blue) 14%, transparent)' : 'transparent',
-                color: isActive ? 'var(--series-blue)' : 'var(--text-secondary)',
+                background: isActive ? 'color-mix(in srgb, var(--brand-primary) 12%, transparent)' : 'transparent',
+                color: isActive ? 'var(--brand-primary)' : 'var(--text-secondary)',
+                boxShadow: isActive ? 'inset 3px 0 0 var(--brand-accent)' : 'none',
               })}
             >
               <Icon size={17} />

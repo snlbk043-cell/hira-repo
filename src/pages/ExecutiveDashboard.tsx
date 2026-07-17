@@ -12,6 +12,7 @@ import {
 import { CheckCircle2, ListChecks, TimerReset } from 'lucide-react';
 import { FilterBar } from '../components/FilterBar';
 import { Card } from '../components/ui/Card';
+import { PageHeader } from '../components/ui/PageHeader';
 import { StatCard } from '../components/ui/StatCard';
 import { Gauge } from '../components/ui/Gauge';
 import { StatusBadge, TrendBadge } from '../components/ui/StatusBadge';
@@ -84,15 +85,10 @@ export function ExecutiveDashboard() {
 
   return (
     <div className="flex flex-col gap-5 pb-10">
-      <div>
-        <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-          RCPL Factory Daily Management System — Executive Review
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Interactive day and month review · one master KPI entry table · deep performance, trend, exception and
-          action analysis
-        </p>
-      </div>
+      <PageHeader
+        title="RCPL Factory Daily Management System — Executive Review"
+        subtitle="Interactive day and month review · one master KPI entry table · deep performance, trend, exception and action analysis"
+      />
 
       <FilterBar />
 
@@ -487,7 +483,10 @@ function DayRankTable({ rows }: { rows: ReturnType<typeof useComputedKpis>['kpis
 
 function Th({ children, align = 'left' }: { children: React.ReactNode; align?: 'left' | 'right' }) {
   return (
-    <th className={`whitespace-nowrap px-2 py-2 font-semibold ${align === 'right' ? 'text-right' : 'text-left'}`}>
+    <th
+      className={`sticky top-0 z-10 whitespace-nowrap px-2 py-2 text-xs font-semibold ${align === 'right' ? 'text-right' : 'text-left'}`}
+      style={{ background: 'var(--brand-primary)', color: '#fff' }}
+    >
       {children}
     </th>
   );

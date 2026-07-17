@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, Search, Trash2 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
+import { PageHeader } from '../components/ui/PageHeader';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { useAppStore } from '../state/AppStore';
 import { useComputedKpis } from '../lib/useComputed';
@@ -32,21 +33,17 @@ export function KpiDataEntry() {
 
   return (
     <div className="flex flex-col gap-5 pb-10">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            DMS KPI Data Entry — Master Table
-          </h1>
-          <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            HODs: filter your department and month, enter Day 1–31 actuals, and update recovery / action details for
-            exceptions.
-          </p>
-        </div>
+      <PageHeader
+        title="DMS KPI Data Entry — Master Table"
+        subtitle="HODs: filter your department and month, enter Day 1–31 actuals, and update recovery / action details for exceptions."
+      />
+
+      <div className="flex justify-end">
         <button
           type="button"
           onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-white"
-          style={{ background: 'var(--series-blue)' }}
+          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-bold text-white shadow-sm transition hover:brightness-95"
+          style={{ background: 'var(--brand-primary)' }}
         >
           <Plus size={16} /> Add KPI
         </button>
@@ -100,7 +97,7 @@ export function KpiDataEntry() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-xs">
             <thead>
-              <tr style={{ background: 'var(--surface-2)' }}>
+              <tr style={{ background: 'var(--brand-primary)' }}>
                 <Th sticky className="w-6" />
                 <Th sticky className="min-w-[190px]">KPI</Th>
                 <Th className="min-w-[110px]">Department</Th>
@@ -369,7 +366,7 @@ function Th({
   return (
     <th
       className={`whitespace-nowrap px-2 py-2 text-[11px] font-semibold ${align === 'right' ? 'text-right' : 'text-left'} ${className ?? ''} ${sticky ? 'sticky left-0 z-10' : ''}`}
-      style={{ color: 'var(--text-muted)', background: sticky ? 'var(--surface-2)' : undefined }}
+      style={{ color: '#fff', background: sticky ? 'var(--brand-primary)' : undefined }}
     >
       {children}
     </th>
