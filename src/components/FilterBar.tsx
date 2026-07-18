@@ -1,7 +1,7 @@
 import { Search } from 'lucide-react';
 import { useAppStore } from '../state/AppStore';
 import { daysInMonth } from '../lib/calc';
-import { TODAY } from '../lib/useComputed';
+import { useLastDataUpdate } from '../lib/useComputed';
 
 const STATUS_OPTIONS = ['All', 'Achieved', 'Watch', 'Action Needed', 'Support Required', 'No Data'];
 const TREND_OPTIONS = ['All', 'Improving', 'Deteriorating', 'Stable', 'Insufficient Data'];
@@ -44,6 +44,7 @@ function opts(values: string[]): { value: string; label: string }[] {
 
 export function FilterBar() {
   const { filters, setFilters, state } = useAppStore();
+  const lastUpdate = useLastDataUpdate();
   const monthNo = state.masterLists.months.indexOf(filters.month) + 1;
   const dim = daysInMonth(filters.year, monthNo || 7);
 
@@ -109,7 +110,7 @@ export function FilterBar() {
           Last data update
         </span>
         <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-          {new Date(state.meta.lastDataUpdate).toLocaleString('en-IN', {
+          {lastUpdate.toLocaleString('en-IN', {
             day: '2-digit',
             month: 'short',
             year: 'numeric',
@@ -126,7 +127,7 @@ export function FilterBar() {
             month: 'July',
             department: 'All',
             pqsdc: 'All',
-            day: TODAY.getDate(),
+            day: 17,
             status: 'All',
             owner: 'All',
             trend: 'All',

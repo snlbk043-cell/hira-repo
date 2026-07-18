@@ -114,6 +114,17 @@ function GeneralTab() {
               style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
             />
           </Field>
+          <Field label="Plant Score Target (%)" hint="The reference line on the Plant Score Trend chart. Individual KPI targets are set per-KPI on the KPI Definitions tab.">
+            <input
+              type="number"
+              min={0}
+              max={200}
+              value={state.meta.plantScoreTarget}
+              onChange={(e) => updateMeta({ plantScoreTarget: Math.max(0, Number(e.target.value)) })}
+              className="w-full rounded border bg-transparent p-2 text-sm outline-none"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            />
+          </Field>
         </div>
       </Card>
 

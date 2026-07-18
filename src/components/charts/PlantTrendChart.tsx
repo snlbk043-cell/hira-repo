@@ -13,7 +13,15 @@ import {
 } from 'recharts';
 import type { PlantDayPoint } from '../../lib/calc';
 
-export function PlantTrendChart({ trend, selectedDay }: { trend: PlantDayPoint[]; selectedDay: number }) {
+export function PlantTrendChart({
+  trend,
+  selectedDay,
+  target = 100,
+}: {
+  trend: PlantDayPoint[];
+  selectedDay: number;
+  target?: number;
+}) {
   const chartData = trend.map((p) => ({
     day: p.day,
     score: p.score !== null ? Math.round(p.score * 1000) / 10 : null,
@@ -34,13 +42,19 @@ export function PlantTrendChart({ trend, selectedDay }: { trend: PlantDayPoint[]
           <CartesianGrid stroke="var(--border)" vertical={false} />
           <XAxis dataKey="day" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} stroke="var(--border-strong)" />
           <YAxis
-            domain={[0, 130]}
+            domain={[0, Math.max(130, target + 30)]}
             tickFormatter={(v) => `${v}%`}
             tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
             stroke="var(--border-strong)"
             width={44}
           />
-          <ReferenceLine y={100} stroke="var(--status-good)" strokeDasharray="3 3" strokeOpacity={0.6} />
+          <ReferenceLine
+            y={target}
+            stroke="var(--status-good)"
+            strokeDasharray="3 3"
+            strokeOpacity={0.6}
+            label={{ value: `Target ${target}%`, position: 'insideTopLeft', fontSize: 10, fill: 'var(--status-good)' }}
+          />
           <Tooltip
             contentStyle={{
               background: 'var(--surface-2)',

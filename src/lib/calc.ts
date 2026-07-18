@@ -196,6 +196,10 @@ export interface EngineFilters {
   pqsdc: string;
   day: number;
   today: Date;
+  status: string;
+  owner: string;
+  trend: string;
+  search: string;
 }
 
 export function computeKpi(def: KpiDefinition, rec: KpiRecord, filters: EngineFilters): ComputedKpi {
@@ -209,7 +213,9 @@ export function computeKpi(def: KpiDefinition, rec: KpiRecord, filters: EngineFi
     .filter((v): v is number => v !== null && meetsTarget(v, def.target, def.direction)).length;
   const daysMissed = daysEntered - daysMet;
 
-  const completionPctFinal = dim > 0 ? Math.min(1, daysEntered / dim) : 0;
+  const isCurrentMonth = rec.year === filters.today.getFullYear() && rec.monthNo === filters.today.getMonth() + 1;
+  const daysElapsed = isCurrentMonth ? Math.min(dim, filters.today.getDate()) : dim;
+  const completionPctFinal = daysElapsed > 0 ? Math.min(1, daysEntered / daysElapsed) : 0;
 
   const achievementPct = scoreWithRecovery(mtdActual, def.target, def.recoveryLimit, def.direction);
   const gap =
@@ -285,11 +291,16 @@ export function computeKpi(def: KpiDefinition, rec: KpiRecord, filters: EngineFi
   const focusScore =
     statusBase[status] + (1 - (mtdPaceScore ?? 0)) * 100 + (openAction && dueDate! < today ? Math.max(0, diffDays(today, dueDate!)) : 0);
 
+  const searchTerm = filters.search.trim().toLowerCase();
   const included =
     rec.year === filters.year &&
     rec.month === filters.month &&
     (filters.department === 'All' || def.department === filters.department) &&
-    (filters.pqsdc === 'All' || def.pqsdc === filters.pqsdc);
+    (filters.pqsdc === 'All' || def.pqsdc === filters.pqsdc) &&
+    (filters.status === 'All' || status === filters.status) &&
+    (filters.owner === 'All' || def.owner === filters.owner) &&
+    (filters.trend === 'All' || trend === filters.trend) &&
+    (!searchTerm || def.name.toLowerCase().includes(searchTerm) || def.kpiId.toLowerCase().includes(searchTerm));
 
   return {
     def,

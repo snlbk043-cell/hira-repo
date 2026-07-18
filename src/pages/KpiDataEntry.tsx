@@ -1,36 +1,28 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { PageHeader } from '../components/ui/PageHeader';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { Sparkline } from '../components/ui/Sparkline';
 import { Field } from '../components/AddKpiModal';
+import { FilterBar } from '../components/FilterBar';
 import { useAppStore } from '../state/AppStore';
 import { useComputedKpis } from '../lib/useComputed';
 import { fmtPercent, fmtUnitValue, scoreColor } from '../lib/format';
 import type { ActionStatus, Priority } from '../types';
 
 export function KpiDataEntry() {
-  const { state, filters, setFilters, updateDay, updateRecord } = useAppStore();
+  const { state, updateDay, updateRecord } = useAppStore();
   const { kpis } = useComputedKpis();
-  const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const rows = useMemo(() => {
-    return kpis
-      .filter((k) => k.rec.year === filters.year && k.rec.month === filters.month)
-      .filter((k) => filters.department === 'All' || k.def.department === filters.department)
-      .filter((k) => filters.pqsdc === 'All' || k.def.pqsdc === filters.pqsdc)
-      .filter((k) => filters.status === 'All' || k.status === filters.status)
-      .filter(
-        (k) =>
-          !search ||
-          k.def.name.toLowerCase().includes(search.toLowerCase()) ||
-          k.def.kpiId.toLowerCase().includes(search.toLowerCase()) ||
-          k.def.owner.toLowerCase().includes(search.toLowerCase()),
-      )
-      .sort((a, b) => a.def.department.localeCompare(b.def.department) || a.def.name.localeCompare(b.def.name));
-  }, [kpis, filters, search]);
+  const rows = useMemo(
+    () =>
+      kpis
+        .filter((k) => k.included)
+        .sort((a, b) => a.def.department.localeCompare(b.def.department) || a.def.name.localeCompare(b.def.name)),
+    [kpis],
+  );
 
   return (
     <div className="flex flex-col gap-5 pb-10">
@@ -39,49 +31,10 @@ export function KpiDataEntry() {
         subtitle="HODs: filter your department and month, enter Day 1–31 actuals, and update recovery / action details for exceptions. Adding or removing KPIs is done from Settings."
       />
 
-      <div className="flex flex-wrap items-end gap-3">
-        <FilterSelect label="Year" value={String(filters.year)} onChange={(v) => setFilters({ year: Number(v) })} options={state.masterLists.years.map(String)} />
-        <FilterSelect label="Month" value={filters.month} onChange={(v) => setFilters({ month: v })} options={state.masterLists.months} />
-        <FilterSelect
-          label="Department"
-          value={filters.department}
-          onChange={(v) => setFilters({ department: v })}
-          options={['All', ...state.masterLists.departments]}
-        />
-        <FilterSelect
-          label="PQSDC"
-          value={filters.pqsdc}
-          onChange={(v) => setFilters({ pqsdc: v })}
-          options={['All', ...state.masterLists.pillars]}
-        />
-        <FilterSelect
-          label="Status"
-          value={filters.status}
-          onChange={(v) => setFilters({ status: v })}
-          options={['All', 'Achieved', 'Watch', 'Action Needed', 'Support Required', 'No Data']}
-        />
-        <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-            Search
-          </span>
-          <div
-            className="flex items-center gap-2 rounded-lg border px-2.5 py-1.5"
-            style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
-          >
-            <Search size={14} color="var(--text-muted)" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="KPI, ID or owner…"
-              className="w-40 bg-transparent text-sm outline-none"
-              style={{ color: 'var(--text-primary)' }}
-            />
-          </div>
-        </label>
-        <span className="ml-auto text-xs" style={{ color: 'var(--text-muted)' }}>
-          {rows.length} of {kpis.length} KPIs shown
-        </span>
-      </div>
+      <FilterBar />
+      <p className="no-print text-right text-xs" style={{ color: 'var(--text-muted)' }}>
+        {rows.length} of {kpis.length} KPIs shown
+      </p>
 
       <Card padded={false}>
         <div className="overflow-x-auto">
@@ -286,38 +239,6 @@ export function KpiDataEntry() {
       </div>
     );
   }
-}
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: string[];
-}) {
-  return (
-    <label className="flex flex-col gap-1">
-      <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-        {label}
-      </span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border px-2.5 py-1.5 text-sm outline-none"
-        style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
-      >
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
 }
 
 function Th({

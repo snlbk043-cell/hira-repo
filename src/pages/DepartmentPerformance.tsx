@@ -31,22 +31,10 @@ export function DepartmentPerformance() {
     [kpis, state.masterLists.departments, state.masterLists.pillars],
   );
 
-  const search = filters.search.trim().toLowerCase();
-  const scopedKpis = useMemo(
-    () =>
-      kpis.filter(
-        (k) =>
-          k.included &&
-          (selectedDept === 'All' || k.def.department === selectedDept) &&
-          (filters.owner === 'All' || k.def.owner === filters.owner) &&
-          (filters.trend === 'All' || k.trend === filters.trend) &&
-          (!search || k.def.name.toLowerCase().includes(search) || k.def.kpiId.toLowerCase().includes(search)),
-      ),
-    [kpis, selectedDept, filters.owner, filters.trend, search],
-  );
+  const scopedKpis = useMemo(() => kpis.filter((k) => k.included), [kpis]);
 
   const plantPace = useMemo(() => {
-    const rows = kpis.filter((k) => k.included && (selectedDept === 'All' || k.def.department === selectedDept));
+    const rows = kpis.filter((k) => k.included);
     let num = 0;
     let den = 0;
     for (const r of rows) {

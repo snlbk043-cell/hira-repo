@@ -2300,6 +2300,7 @@ export const initialState: AppState = {
     plantName: 'RCPL Kurnool — Campa Cola / Soft Beverage Plant',
     preparedBy: 'Factory Manager',
     dueSoonDays: 3,
+    plantScoreTarget: 100,
   },
   leadershipReviews: {},
 };

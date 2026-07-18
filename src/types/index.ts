@@ -94,6 +94,7 @@ export interface AppState {
     plantName: string;
     preparedBy: string;
     dueSoonDays: number;
+    plantScoreTarget: number;
   };
   leadershipReviews: Record<string, LeadershipReview>;
 }
